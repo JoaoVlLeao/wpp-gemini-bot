@@ -143,7 +143,19 @@ Responda como *Fernanda*, de forma empática e natural, no máximo duas mensagen
 // ======= WhatsApp setup =======
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: './data' }),
-  puppeteer: { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] },
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process', // 👈 importante para ambientes limitados
+            '--disable-gpu'
+        ]
+    }
 });
 
 client.on('qr', qr => {
