@@ -159,7 +159,8 @@ const client = new Client({
       '--disable-features=site-per-process',
       '--use-gl=egl'
     ],
-    executablePath: '/usr/bin/google-chrome-stable' // evita usar o Chromium interno
+    executablePath: puppeteer.executablePath()
+
   }
 });
 
