@@ -144,10 +144,9 @@ Responda como *Fernanda*, de forma empática e natural, no máximo duas mensagen
 import puppeteer from "puppeteer";
 
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: './sessions' }), // ✅ mantém sessão no disco
+  authStrategy: new LocalAuth(), // mantém sessão salva no container
   puppeteer: {
     headless: true,
-    executablePath: puppeteer.executablePath(),
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -156,10 +155,14 @@ const client = new Client({
       '--no-first-run',
       '--no-zygote',
       '--single-process',
-      '--disable-gpu'
-    ]
+      '--disable-gpu',
+      '--disable-features=site-per-process',
+      '--use-gl=egl'
+    ],
+    executablePath: '/usr/bin/google-chrome-stable' // evita usar o Chromium interno
   }
 });
+
 
 
 client.on('qr', qr => {
@@ -275,6 +278,17 @@ chat.sendStateTyping();
     } catch {}
   }
 });
+process.on('uncaughtException', err => {
+  console.error('❌ Erro não tratado:', err);
+});
+process.on('unhandledRejection', err => {
+  console.error('❌ Promessa rejeitada:', err);
+});
+
+// Impede o Railway de reiniciar constantemente
+setInterval(() => {
+  console.log('💓 KeepAlive: bot rodando normalmente');
+}, 60 * 1000); // 1 minuto
 
 client.initialize().catch(e => console.error('Erro ao iniciar o WhatsApp client', e));
 // Mantém o processo vivo no Railway
