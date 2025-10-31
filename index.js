@@ -142,20 +142,20 @@ Responda como *Fernanda*, de forma empática e natural, no máximo duas mensagen
 
 // ======= WhatsApp setup =======
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: './data' }),
-    puppeteer: {
-        headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process', // 👈 importante para ambientes limitados
-            '--disable-gpu'
-        ]
-    }
+  puppeteer: {
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+      '--disable-gpu'
+    ],
+    executablePath: '/usr/bin/chromium-browser' // tenta usar o chromium do Railway
+  }
 });
 
 client.on('qr', qr => {
