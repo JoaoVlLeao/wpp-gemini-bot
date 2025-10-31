@@ -141,9 +141,13 @@ Responda como *Fernanda*, de forma empática e natural, no máximo duas mensagen
 }
 
 // ======= WhatsApp setup =======
+import puppeteer from "puppeteer";
+import { Client } from "whatsapp-web.js";
+
 const client = new Client({
   puppeteer: {
     headless: true,
+    executablePath: puppeteer.executablePath(), // <- usa o binário certo do Puppeteer
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -153,8 +157,7 @@ const client = new Client({
       '--no-zygote',
       '--single-process',
       '--disable-gpu'
-    ],
-    executablePath: '/usr/bin/chromium-browser' // tenta usar o chromium do Railway
+    ]
   }
 });
 
