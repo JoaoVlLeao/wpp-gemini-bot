@@ -142,7 +142,6 @@ Responda como *Fernanda*, de forma empática e natural, no máximo duas mensagen
 
 // ======= WhatsApp setup =======
 import puppeteer from "puppeteer";
-import { Client } from "whatsapp-web.js";
 
 const client = new Client({
   puppeteer: {
