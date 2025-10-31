@@ -144,9 +144,10 @@ Responda como *Fernanda*, de forma empática e natural, no máximo duas mensagen
 import puppeteer from "puppeteer";
 
 const client = new Client({
+  authStrategy: new LocalAuth({ dataPath: './sessions' }), // ✅ mantém sessão no disco
   puppeteer: {
     headless: true,
-    executablePath: puppeteer.executablePath(), // <- usa o binário certo do Puppeteer
+    executablePath: puppeteer.executablePath(),
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -159,6 +160,7 @@ const client = new Client({
     ]
   }
 });
+
 
 client.on('qr', qr => {
   log.info('📱 Escaneie o QR code abaixo:');
@@ -275,3 +277,10 @@ chat.sendStateTyping();
 });
 
 client.initialize().catch(e => console.error('Erro ao iniciar o WhatsApp client', e));
+import express from 'express';
+const app = express();
+
+app.get('/', (req, res) => res.send('✅ Bot está rodando!'));
+app.listen(process.env.PORT || 3000, () =>
+  console.log(`Servidor ativo na porta ${process.env.PORT || 3000}`)
+);
