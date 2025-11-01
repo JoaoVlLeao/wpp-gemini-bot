@@ -123,13 +123,24 @@ E então envie o link completo.
       .map(h => `${h.role === 'user' ? 'Cliente' : 'Fernanda'}: ${h.text}`)
       .join('\n');
 
-    const prompt = `
+       const prompt = `
 ${contextText}
-Histórico:
+
+Histórico recente (use apenas se for útil para entender o contexto atual, não repita informações antigas):
 ${historyText}
 
-Nova mensagem:
+Nova mensagem da cliente:
 "${userMessage}"
+
+🎯 Instrução importante:
+- Foque apenas na última mensagem recebida.
+- Use o histórico apenas como contexto leve, não repita informações antigas, a menos que seja necessário.
+- Se a cliente mudar de assunto, responda ao novo tema e ignore mensagens anteriores que não sejam mais relevantes.
+- Responda de forma natural, empática e breve (máximo de duas mensagens curtas).
+- Evite repetir informações já confirmadas anteriormente, a menos que a cliente peça novamente.
+- Não mencione atrasos, prazos ou rastreios se a nova pergunta não for sobre isso.
+`;
+
 
 Responda como *Fernanda*, de forma empática e natural, no máximo duas mensagens curtas.
 `;
