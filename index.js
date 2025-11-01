@@ -27,13 +27,16 @@ const MAX_TURNS = 12;
 
 function getSession(chatId) {
   if (!sessions.has(chatId))
-    sessions.set(chatId, {
-      history: [],
-      name: null,
-      greeted: false,
-      batch: [],
-      timer: null
-    });
+sessions.set(chatId, {
+  history: [],
+  name: null,
+  greeted: false,
+  batch: [],
+  timer: null,
+  buffer: [],
+  bufferTimer: null
+});
+
   return sessions.get(chatId);
 }
 
@@ -195,6 +198,67 @@ client.on('message', async message => {
     const contact = await message.getContact();
     const text = message.body?.trim();
     if (!text) return;
+// ====== BUFFER DE MENSAGENS ======
+const session = getSession(message.from);
+if (!session.name && contact.pushname)
+  session.name = contact.pushname.split(' ')[0];
+
+// se ainda não existe buffer para este chat, cria
+if (!session.buffer) session.buffer = [];
+session.buffer.push(text);
+
+// se já houver um timer, cancela
+if (session.bufferTimer) clearTimeout(session.bufferTimer);
+
+// espera 5 segundos para ver se a cliente manda mais mensagens
+session.bufferTimer = setTimeout(async () => {
+  const combinedText = session.buffer.join('\n');
+  session.buffer = []; // limpa o buffer
+  session.bufferTimer = null;
+
+  pushHistory(session, 'user', combinedText);
+  session.lastActive = Date.now();
+
+  // Delay natural antes de começar a digitar (após o primeiro contato)
+  if (session.greeted) {
+    await new Promise(r => setTimeout(r, 1500)); // Fernanda “pensa” antes de responder
+    chat.sendStateTyping(); // começa a digitar
+    await new Promise(r => setTimeout(r, 1500)); // digita por 1.5s
+  } else {
+    chat.sendStateTyping();
+  }
+
+  let orderData = null;
+  const matchOrder = combinedText.match(/\b(\d{3,8})\b/);
+  const matchEmail = combinedText.match(/[^\s]+@[^\s]+/);
+  const matchCPF = combinedText.match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/);
+
+  if (matchOrder || matchEmail || matchCPF) {
+    try {
+      const key = matchOrder ? matchOrder[1] : matchEmail ? matchEmail[0] : matchCPF[0];
+      const order = await getOrderByNumber(key);
+      if (order) {
+        orderData = summarizeOrder(order);
+        console.log('📦 Pedido encontrado:');
+        console.log(JSON.stringify(orderData, null, 2));
+      }
+    } catch (err) {
+      console.error('Erro ao buscar pedido:', err);
+    }
+  }
+
+  const replies = await chatWithGemini(session, combinedText, orderData, !session.greeted);
+  for (const part of replies) {
+    await message.reply(part);
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  session.greeted = true;
+  chat.clearState();
+}, 5000); // espera 5 segundos sem novas mensagens antes de responder
+
+return;
+
 
     const session = getSession(message.from);
     if (!session.name && contact.pushname)
@@ -248,46 +312,7 @@ client.on('message', async message => {
       return;
     }
 
-    // ====== FLUXO NORMAL ======
-    pushHistory(session, 'user', text);
-session.lastActive = Date.now();
-
-// Delay natural antes de começar a digitar (após o primeiro contato)
-if (session.greeted) {
-  await new Promise(r => setTimeout(r, 2000));
-}
-
-chat.sendStateTyping();
-
-
-    let orderData = null;
-    const matchOrder = text.match(/\b(\d{3,8})\b/);
-    const matchEmail = text.match(/[^\s]+@[^\s]+/);
-    const matchCPF = text.match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/);
-
-    if (matchOrder || matchEmail || matchCPF) {
-      try {
-        const key = matchOrder ? matchOrder[1] : matchEmail ? matchEmail[0] : matchCPF[0];
-        const order = await getOrderByNumber(key);
-        if (order) {
-          orderData = summarizeOrder(order);
-          console.log('📦 Pedido encontrado:');
-          console.log(JSON.stringify(orderData, null, 2));
-        }
-      } catch (err) {
-        console.error('Erro ao buscar pedido:', err);
-      }
-    }
-
-    const replies = await chatWithGemini(session, text, orderData, false);
-    for (const part of replies) {
-      await message.reply(part);
-      await new Promise(r => setTimeout(r, 1000));
-    }
-
-    session.greeted = true;
-    chat.clearState();
-  } catch (err) {
+     } catch (err) {
     console.error('Erro no handler principal:', err);
     try {
       await message.reply('Desculpe, ocorreu um erro inesperado.');
