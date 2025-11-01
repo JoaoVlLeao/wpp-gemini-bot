@@ -230,24 +230,25 @@ session.bufferTimer = setTimeout(async () => {
     chat.sendStateTyping();
   }
 
-  let orderData = null;
-  const matchOrder = combinedText.match(/\b(\d{3,8})\b/);
-  const matchEmail = combinedText.match(/[^\s]+@[^\s]+/);
-  const matchCPF = combinedText.match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/);
+  let orderData = session.orderData || null; // tenta recuperar o pedido salvo da sessão
+const matchOrder = combinedText.match(/\b(\d{3,8})\b/);
+const matchEmail = combinedText.match(/[^\s]+@[^\s]+/);
+const matchCPF = combinedText.match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/);
 
-  if (matchOrder || matchEmail || matchCPF) {
-    try {
-      const key = matchOrder ? matchOrder[1] : matchEmail ? matchEmail[0] : matchCPF[0];
-      const order = await getOrderByNumber(key);
-      if (order) {
-        orderData = summarizeOrder(order);
-        console.log('📦 Pedido encontrado:');
-        console.log(JSON.stringify(orderData, null, 2));
-      }
-    } catch (err) {
-      console.error('Erro ao buscar pedido:', err);
+if (matchOrder || matchEmail || matchCPF) {
+  try {
+    const key = matchOrder ? matchOrder[1] : matchEmail ? matchEmail[0] : matchCPF[0];
+    const order = await getOrderByNumber(key);
+    if (order) {
+      orderData = summarizeOrder(order);
+      session.orderData = orderData; // 🔥 salva permanentemente na memória da conversa
+      console.log('📦 Pedido encontrado (novo ou atualizado):');
+      console.log(JSON.stringify(orderData, null, 2));
     }
+  } catch (err) {
+    console.error('Erro ao buscar pedido:', err);
   }
+}
 
   const replies = await chatWithGemini(session, combinedText, orderData, !session.greeted);
   for (const part of replies) {
