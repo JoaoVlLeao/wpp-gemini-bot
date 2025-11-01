@@ -300,11 +300,3 @@ setInterval(() => {
 }, 60 * 1000); // 1 minuto
 
 client.initialize().catch(e => console.error('Erro ao iniciar o WhatsApp client', e));
-// Mantém o processo vivo no Railway
-import express from 'express';
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.get('/', (req, res) => res.send('✅ Bot está rodando!'));
-app.listen(PORT, () => console.log(`🌐 Servidor ativo na porta ${PORT}`));
