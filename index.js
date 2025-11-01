@@ -6,6 +6,14 @@ import qrcode from 'qrcode-terminal';
 import pino from 'pino';
 import { getOrderByNumber, summarizeOrder } from './shopify.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import express from "express"; // <-- adicione esta importação aqui
+
+// ====== KEEP ALIVE SERVER ======
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.get("/", (req, res) => res.send("💓 KeepAlive: bot rodando normalmente"));
+app.listen(PORT, () => console.log(`🌐 Servidor ativo na porta ${PORT}`));
 
 const log = pino({ level: 'info' });
 
