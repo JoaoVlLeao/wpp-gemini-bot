@@ -244,6 +244,7 @@ client.on('message', async message => {
 
     // ====== FLUXO NORMAL ======
     pushHistory(session, 'user', text);
+session.lastActive = Date.now();
 
 // Delay natural antes de começar a digitar (após o primeiro contato)
 if (session.greeted) {
@@ -300,3 +301,21 @@ setInterval(() => {
 }, 60 * 1000); // 1 minuto
 
 client.initialize().catch(e => console.error('Erro ao iniciar o WhatsApp client', e));
+
+// ======= LIMPEZA AUTOMÁTICA DE SESSÕES =======
+
+// Marca o horário da última atividade do usuário (adicione session.lastActive = Date.now() dentro do handler!)
+setInterval(() => {
+  const now = Date.now();
+
+  for (const [chatId, session] of sessions) {
+    if (!session.lastActive) continue; // ignora se ainda não foi usado
+
+    const diffMins = (now - session.lastActive) / 1000 / 60;
+
+    if (diffMins > 25) { // 25 minutos sem interação
+      console.log(`🧹 Limpando sessão inativa de ${chatId} (${diffMins.toFixed(1)}min sem atividade)`);
+      sessions.delete(chatId);
+    }
+  }
+}, 10 * 60 * 1000); // verifica a cada 10 minutos
