@@ -203,9 +203,6 @@ if (message.type === 'audio' || message.type === 'ptt' || message.type === 'imag
   const media = await message.downloadMedia();
   if (!media || !media.data) return;
 
-  import fs from "fs";
-  import path from "path";
-
   // Define extensão conforme o tipo
   const ext = message.type === 'image' ? 'jpg' : 'ogg';
   const filePath = path.resolve(`./temp_${message.id.id}.${ext}`);
