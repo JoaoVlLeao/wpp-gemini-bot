@@ -198,34 +198,63 @@ client.on('message', async message => {
   try {
     const chat = await message.getChat();
     const contact = await message.getContact();
-    // 🟡 Se for áudio, transcreve com Gemini
-    if (message.type === 'audio' || message.type === 'ptt') {
-      const media = await message.downloadMedia();
-      if (!media || !media.data) return;
-      const filePath = path.resolve(`./temp_${message.id.id}.ogg`);
-      fs.writeFileSync(filePath, media.data, 'base64');
+// 🟡 Se for áudio ou imagem, processa com Gemini
+if (message.type === 'audio' || message.type === 'ptt' || message.type === 'image') {
+  const media = await message.downloadMedia();
+  if (!media || !media.data) return;
 
-      console.log(`🎙️ Áudio recebido de ${contact.pushname}`);
+  import fs from "fs";
+  import path from "path";
 
-      // Transcreve usando Gemini (modelo multimodal)
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-      const audio = {
-        inlineData: {
-          mimeType: "audio/ogg",
-          data: media.data
-        }
-      };
-      const result = await model.generateContent([
-        "Transcreva este áudio com pontuação e clareza. Retorne apenas o texto:",
-        audio
-      ]);
-      const transcript = result.response.text().trim();
+  // Define extensão conforme o tipo
+  const ext = message.type === 'image' ? 'jpg' : 'ogg';
+  const filePath = path.resolve(`./temp_${message.id.id}.${ext}`);
+  fs.writeFileSync(filePath, media.data, 'base64');
 
-      console.log(`📝 Transcrição: ${transcript}`);
+  console.log(`🟢 Mídia recebida (${message.type}) de ${contact.pushname}`);
 
-      // Substitui o conteúdo da mensagem pela transcrição
-      message.body = transcript;
-    }
+  // Seleciona o modelo multimodal do Gemini
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+
+  let prompt;
+  let content;
+
+  if (message.type === 'audio' || message.type === 'ptt') {
+    // Áudio → transcrição
+    content = {
+      inlineData: {
+        mimeType: "audio/ogg",
+        data: media.data
+      }
+    };
+    prompt = "Transcreva este áudio com clareza, pontuação e naturalidade, retornando apenas o texto falado:";
+  } else {
+    // Imagem → interpretação
+    content = {
+      inlineData: {
+        mimeType: "image/jpeg",
+        data: media.data
+      }
+    };
+    prompt = `
+Você é Fernanda, atendente da AquaFit Brasil.
+Descreva de forma breve e educada o que aparece nesta imagem.
+Se for uma foto de produto, tente identificar se parece com um item da loja.
+Não invente informações. Responda com uma frase natural.`;
+  }
+
+  const result = await model.generateContent([prompt, content]);
+  const interpretation = result.response.text().trim();
+
+  console.log(`📝 Interpretação da mídia: ${interpretation}`);
+
+  // substitui o conteúdo da mensagem pelo texto interpretado
+  message.body = interpretation;
+
+  // e marca o tipo como texto, para o restante do código seguir normalmente
+  message.type = 'chat';
+}
+
 
     const text = message.body?.trim();
     if (!text) return;
