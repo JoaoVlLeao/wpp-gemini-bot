@@ -1,5 +1,7 @@
 // index.js
 import 'dotenv/config';
+import fs from "fs";
+import path from "path";
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
@@ -200,10 +202,6 @@ client.on('message', async message => {
     if (message.type === 'audio' || message.type === 'ptt') {
       const media = await message.downloadMedia();
       if (!media || !media.data) return;
-
-      import fs from "fs";
-      import path from "path";
-
       const filePath = path.resolve(`./temp_${message.id.id}.ogg`);
       fs.writeFileSync(filePath, media.data, 'base64');
 
