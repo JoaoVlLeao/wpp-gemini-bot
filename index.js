@@ -198,59 +198,52 @@ client.on('message', async message => {
   try {
     const chat = await message.getChat();
     const contact = await message.getContact();
-// 🟡 Se for áudio ou imagem, processa com Gemini
-if (message.type === 'audio' || message.type === 'ptt' || message.type === 'image') {
+// 🟡 Se for áudio ou imagem, processa com Gemini 2.5 Pro (somente quando necessário)
+if (['audio', 'ptt', 'image'].includes(message.type)) {
   const media = await message.downloadMedia();
   if (!media || !media.data) return;
 
-  // Define extensão conforme o tipo
-  const ext = message.type === 'image' ? 'jpg' : 'ogg';
-  const filePath = path.resolve(`./temp_${message.id.id}.${ext}`);
-  fs.writeFileSync(filePath, media.data, 'base64');
+  console.log(`🎧 Mídia recebida (${message.type}) de ${contact.pushname}`);
 
-  console.log(`🟢 Mídia recebida (${message.type}) de ${contact.pushname}`);
-
-  // Seleciona o modelo multimodal do Gemini
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
-  let prompt;
-  let content;
-
-  if (message.type === 'audio' || message.type === 'ptt') {
-    // Áudio → transcrição
-    content = {
-      inlineData: {
-        mimeType: "audio/ogg",
-        data: media.data
-      }
-    };
-    prompt = "Transcreva este áudio com clareza, pontuação e naturalidade, retornando apenas o texto falado:";
-  } else {
-    // Imagem → interpretação
-    content = {
-      inlineData: {
-        mimeType: "image/jpeg",
-        data: media.data
-      }
-    };
+  let prompt, mimeType;
+  if (message.type === 'image') {
+    mimeType = "image/jpeg";
     prompt = `
-Você é Fernanda, atendente da AquaFit Brasil.
-Descreva de forma breve e educada o que aparece nesta imagem.
-Se for uma foto de produto, tente identificar se parece com um item da loja.
-Não invente informações. Responda com uma frase natural.`;
+Você é Fernanda, atendente da loja AquaFit Brasil.
+Descreva brevemente o conteúdo da imagem de forma objetiva e educada.
+Se for um print ou foto de produto, diga o que vê, mas não invente.
+Se houver texto visível, transcreva apenas o que parecer relevante ao atendimento.`;
+  } else {
+    mimeType = "audio/ogg";
+    prompt = `
+Transcreva o conteúdo deste áudio em português com clareza e pontuação correta.
+Não adicione comentários, apenas o texto falado.`;
   }
 
-  const result = await model.generateContent([prompt, content]);
-  const interpretation = result.response.text().trim();
+  const result = await model.generateContent([
+    prompt,
+    {
+      inlineData: {
+        mimeType,
+        data: media.data
+      }
+    }
+  ]);
 
-  console.log(`📝 Interpretação da mídia: ${interpretation}`);
+  const interpretation = result.response.text()?.trim() || "";
 
-  // substitui o conteúdo da mensagem pelo texto interpretado
-  message.body = interpretation;
+  // 💡 Corrige formatações do tipo "17.553" → "17553"
+  const cleaned = interpretation.replace(/(\d+)\.(\d+)/g, '$1$2');
 
-  // e marca o tipo como texto, para o restante do código seguir normalmente
-  message.type = 'chat';
+  console.log(`🧠 Interpretação final da mídia: ${cleaned}`);
+
+  // Substitui o conteúdo da mensagem
+  message.body = cleaned;
+  message.type = 'chat'; // força o fluxo padrão
 }
+
 
 
     const text = message.body?.trim();
