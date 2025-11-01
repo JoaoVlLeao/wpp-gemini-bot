@@ -208,7 +208,7 @@ client.on('message', async message => {
       console.log(`🎙️ Áudio recebido de ${contact.pushname}`);
 
       // Transcreve usando Gemini (modelo multimodal)
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
       const audio = {
         inlineData: {
           mimeType: "audio/ogg",
