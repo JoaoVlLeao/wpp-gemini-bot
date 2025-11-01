@@ -259,11 +259,6 @@ session.bufferTimer = setTimeout(async () => {
 
 return;
 
-
-    const session = getSession(message.from);
-    if (!session.name && contact.pushname)
-      session.name = contact.pushname.split(' ')[0];
-
     const isFirstMessage = !session.greeted;
 
     // ====== AGRUPA MENSAGENS INICIAIS ======
