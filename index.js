@@ -210,10 +210,12 @@ session.buffer.push(text);
 // se já houver um timer, cancela
 if (session.bufferTimer) clearTimeout(session.bufferTimer);
 
-// espera 5 segundos para ver se a cliente manda mais mensagens
+// se for a primeira mensagem da conversa, espera 25 segundos; senão, 10 segundos
+const delay = !session.greeted ? 25000 : 10000;
+
 session.bufferTimer = setTimeout(async () => {
   const combinedText = session.buffer.join('\n');
-  session.buffer = []; // limpa o buffer
+  session.buffer = [];
   session.bufferTimer = null;
 
   pushHistory(session, 'user', combinedText);
@@ -221,9 +223,9 @@ session.bufferTimer = setTimeout(async () => {
 
   // Delay natural antes de começar a digitar (após o primeiro contato)
   if (session.greeted) {
-    await new Promise(r => setTimeout(r, 1500)); // Fernanda “pensa” antes de responder
-    chat.sendStateTyping(); // começa a digitar
-    await new Promise(r => setTimeout(r, 1500)); // digita por 1.5s
+    await new Promise(r => setTimeout(r, 1500));
+    chat.sendStateTyping();
+    await new Promise(r => setTimeout(r, 1500));
   } else {
     chat.sendStateTyping();
   }
@@ -255,7 +257,8 @@ session.bufferTimer = setTimeout(async () => {
 
   session.greeted = true;
   chat.clearState();
-}, 5000); // espera 5 segundos sem novas mensagens antes de responder
+}, delay); // espera 25s na 1ª mensagem, 10s nas demais
+
 
 return;
 
