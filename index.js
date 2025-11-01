@@ -196,6 +196,39 @@ client.on('message', async message => {
   try {
     const chat = await message.getChat();
     const contact = await message.getContact();
+    // 🟡 Se for áudio, transcreve com Gemini
+    if (message.type === 'audio' || message.type === 'ptt') {
+      const media = await message.downloadMedia();
+      if (!media || !media.data) return;
+
+      import fs from "fs";
+      import path from "path";
+
+      const filePath = path.resolve(`./temp_${message.id.id}.ogg`);
+      fs.writeFileSync(filePath, media.data, 'base64');
+
+      console.log(`🎙️ Áudio recebido de ${contact.pushname}`);
+
+      // Transcreve usando Gemini (modelo multimodal)
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const audio = {
+        inlineData: {
+          mimeType: "audio/ogg",
+          data: media.data
+        }
+      };
+      const result = await model.generateContent([
+        "Transcreva este áudio com pontuação e clareza. Retorne apenas o texto:",
+        audio
+      ]);
+      const transcript = result.response.text().trim();
+
+      console.log(`📝 Transcrição: ${transcript}`);
+
+      // Substitui o conteúdo da mensagem pela transcrição
+      message.body = transcript;
+    }
+
     const text = message.body?.trim();
     if (!text) return;
 // ====== BUFFER DE MENSAGENS ======
