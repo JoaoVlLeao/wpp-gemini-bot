@@ -180,9 +180,10 @@ const client = new Client({
 
 
 client.on('qr', qr => {
-  log.info('📱 Escaneie o QR code abaixo:');
-  qrcode.generate(qr, { small: true });
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
+  log.info(`📱 Escaneie o QR code nesse link: ${qrImageUrl}`);
 });
+
 client.on('ready', () => log.info('✅ WhatsApp conectado e pronto.'));
 client.on('auth_failure', m => log.error({ m }, 'Falha de autenticação'));
 client.on('disconnected', r => log.warn({ r }, 'Desconectado'));
